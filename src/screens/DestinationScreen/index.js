@@ -26,16 +26,6 @@ import Geolocation from 'react-native-geolocation-service';
 import pesh from '../../assets/kur/button/Weiter5.png';
 import leg from '../../assets/kur/button/Weiter6.png';
 import gruz from '../../assets/kur/button/Weiter7.png';
-import {
-  computeDestinationPoint,
-  getCenter,
-  getDistance,
-  getGreatCircleBearing,
-  getPathLength,
-  isPointInPolygon,
-  isPointWithinRadius,
-  orderByDistance,
-} from 'geolib';
 
 const Section = ({containerStyle, title, children}) => {
   return (
@@ -59,7 +49,7 @@ function ZakazScreen() {
   const [errors, setErrors] = useState();
   const [refresh, setRefresh] = useState(false);
   const [km, setKm] = useState(false);
-  const [s, setS] = useState([0, 0]);
+  const [s, setS] = useState(10);
   const [matrixTypes, setMatrixTypes] = useState({
     latitude: 0,
     longitude: 0,
@@ -88,23 +78,6 @@ function ZakazScreen() {
       setRefresh(false);
     }
   };
-
-  useEffect(() => {
-    api
-      .getZakazy()
-      .then(respons => {
-        setZakaz(respons);
-        api
-          .getUserInfo()
-          .then(response => {
-            dispatch(actions.userInfoSuccess(response));
-          })
-          .catch(() => {});
-      })
-      .catch(response => {
-        setErrors(response.messages);
-      });
-  }, []);
 
   const type = number => {
     api
@@ -139,7 +112,7 @@ function ZakazScreen() {
               api
                 .getZakaz()
                 .then(response => {
-                  setZakaz(response.items);
+                  setZakaz(response);
                 })
                 .catch(response => {
                   setErrors({...errors, messages: response.messages});
@@ -204,22 +177,65 @@ function ZakazScreen() {
         });
     });
 
+  const courier_lat = state.latitude; //кординаты курьера широта
+  const courier_lon = state.longitude; //кординаты курьера долгота
+  const radius = 10; //радиус в километрах
+  function deg2rad(degrees) {
+    return (degrees * Math.PI) / 180;
+  }
+  //Калькулятор
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) *
+        Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  }
+  //фильтер
+  function filterOrdersWithinRadius(orders, courierLat, courierLon, radiu) {
+    const filteredOrders = [];
+    for (let i = 0; i < orders.length; i++) {
+      const order = orders[i];
+      const orderLat = order.latitude;
+      const orderLon = order.longitude;
+      const distance = calculateDistance(
+        courierLat,
+        courierLon,
+        orderLat,
+        orderLon,
+        radiu,
+      );
+      if (distance && filteredOrders.push(order)) {
+        return filteredOrders;
+      }
+    }
+  }
+
+  const filteredOrders = filterOrdersWithinRadius(
+    zakaz, //список ордеров с координатами
+    courier_lat, //кординаты курьера широта
+    courier_lon, //кординаты курьера долгота
+    radius,
+  );
+  for (let i = 0; i < filteredOrders; i++) {
+    const order = filteredOrders[i];
+    console.log(`Order ${order.id} at (${order.latitude}, ${order.longitude})`);
+  }
+
   useEffect(() => {
     getCurrentLocation();
     locationPermission();
     api
       .getZakazy()
       .then(respons => {
-        if (!isEmpty(respons)) {
-          respons.map(coords => {
-            //console.log(coords);
-            setMatrixTypes(prevState => ({
-              ...prevState,
-              latitude: +coords.latitudes,
-              longitude: +coords.longitudes,
-            }));
-          });
-        }
+        setZakaz(respons);
         api
           .getUserInfo()
           .then(response => {
@@ -231,30 +247,6 @@ function ZakazScreen() {
         setErrors(response.messages);
       });
   }, []);
-  const courier_lat = state.latitude;
-  const courier_lon = state.longitude;
-  const radius = 10;
-  const filtered_orders = [matrixTypes];
-  function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-    var R = 6372.8; // Radius of the earth in km
-    var dLat = deg2rad(lat2 - lat1); // deg2rad below
-    var dLon = deg2rad(lon2 - lon1);
-    var lats1 = deg2rad(lat1);
-    var lats2 = deg2rad(lat2);
-    var a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(lats1) * Math.cos(lats2) * Math.sin(dLon / 2) ** 2;
-    var c = 2 * Math.asin(Math.sqrt(a), Math.sqrt(1 - a));
-    var d = R * c; // Distance in km
-    return d;
-  }
-
-  function deg2rad(deg) {
-    return deg * (Math.PI / 180);
-  }
-
-  const distanceMOWBKK = getDistanceFromLatLonInKm(courier_lat, courier_lon);
-  console.log();
   function renderDistance() {
     return (
       <>
@@ -265,11 +257,11 @@ function ZakazScreen() {
                 alignItems: 'center',
               }}>
               <TwoPointSlider
-                values={s}
+                values={[s]}
                 min={1}
                 max={100}
                 postfix="km"
-                onValuesChange={values => setS(values)}
+                onValuesChange={value => setS(value)}
               />
             </View>
             <View

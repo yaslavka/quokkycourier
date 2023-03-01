@@ -181,7 +181,7 @@ function SignInScreen() {
                 <Line x2={wp(5000)} stroke="#80884D" strokeOpacity="0.6" />
               </Svg>
             </View>
-            <View style={{top: 302, left: 18}}>
+            <View style={{top: wp(90), left: 18}}>
               <TouchableOpacity
                 onPress={() => {
                   navigation.navigate('Forgot');
@@ -273,6 +273,7 @@ function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+      backgroundColor:'#FFF'
   },
   view1: {},
   TextInput: {

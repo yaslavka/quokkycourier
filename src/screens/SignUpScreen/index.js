@@ -341,7 +341,7 @@ function SignUpScreen() {
             </View>
             <View
               style={{
-                top: wp(78.5),
+                top: wp(82.5),
                 alignItems: 'flex-end',
                 paddingRight: wp(39),
               }}>
@@ -373,7 +373,7 @@ function SignUpScreen() {
             </View>
             <View
               style={{
-                top: wp(71.5),
+                top: wp(76),
                 alignItems: 'flex-end',
                 paddingRight: wp(27.5),
               }}>

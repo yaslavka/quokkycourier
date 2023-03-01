@@ -226,6 +226,7 @@ function ZakazScreen() {
     );
     setFilteredList(fList);
   }, [courier_lat, courier_lon, s, zakaz]);
+  console.log(filteredList)
 
   useEffect(() => {
     getCurrentLocation();

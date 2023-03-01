@@ -4,8 +4,6 @@ import {
   Text,
   SafeAreaView,
   StyleSheet,
-  ScrollView,
-  RefreshControl,
   Alert,
   TouchableOpacity,
   Image,
@@ -336,7 +334,9 @@ function KurerScreen() {
                             borderWidth: 1,
                             top: 20,
                             width: '100%',
+                            height: 60,
                             borderRadius: 10,
+                            padding: 20
                           }}>
                           <TextInput
                             editable
